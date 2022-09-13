@@ -1,0 +1,16 @@
+{
+  "CN": "{{ certificate.ca.attributes.CN }}",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "{{ certificate.ca.attributes.C }}",
+      "L": "{{ certificate.ca.attributes.L }}",
+      "O": "{{ certificate.ca.attributes.O }}",
+      "OU": "{{ certificate.ca.attributes.OU }}",
+      "ST": "{{ certificate.ca.attributes.ST }}"
+    }
+  ]
+}

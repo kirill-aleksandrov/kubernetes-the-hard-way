@@ -1,0 +1,63 @@
+- import_tasks: requirements.yml
+
+- name: Prepare certificate directories
+  file:
+    path: '{{ item.path }}'
+    state: directory
+  with_items:
+    - path: '{{ deployer.certificate.directory }}/configs'
+    - path: '{{ deployer.certificate.directory }}/ca'
+    - path: '{{ deployer.certificate.directory }}/admin'
+    - path: '{{ deployer.certificate.directory }}/worker'
+
+- name: Render certificate configs
+  template:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+    - src: ca-config.json.j2
+      dest: '{{ deployer.certificate.directory }}/configs/ca-config.json'
+    - src: ca-csr.json.j2
+      dest: '{{ deployer.certificate.directory }}/configs/ca-csr.json'
+    - src: admin-csr.json.j2
+      dest: '{{ deployer.certificate.directory }}/configs/admin-csr.json'
+
+- name: Generate root CA
+  shell:
+    cmd: |
+      cfssl gencert -initca \
+        {{ deployer.certificate.directory }}/configs/ca-csr.json \
+        | cfssljson -bare ca
+    chdir: "{{ deployer.certificate.directory }}/ca"
+
+- name: Generate admin client certificate
+  shell:
+    cmd: |
+      cfssl gencert \
+        -ca={{ deployer.certificate.directory }}/ca/ca.pem \
+        -ca-key={{ deployer.certificate.directory }}/ca/ca-key.pem \
+        -config={{ deployer.certificate.directory }}/configs/ca-config.json \
+        -profile=kubernetes \
+        {{ deployer.certificate.directory }}/configs/admin-csr.json \
+        | cfssljson -bare admin
+    chdir: "{{ deployer.certificate.directory }}/admin"
+
+- name: Render worker certificate configs
+  template:
+    src: worker-csr.json.j2
+    dest: '{{ deployer.certificate.directory }}/configs/{{ item }}-csr.json'
+  with_items: '{{ groups["worker"] }}'
+
+- name: Generate worker certificates
+  shell:
+    cmd: |
+      cfssl gencert \
+        -ca={{ deployer.certificate.directory }}/ca/ca.pem \
+        -ca-key={{ deployer.certificate.directory }}/ca/ca-key.pem \
+        -config={{ deployer.certificate.directory }}/configs/ca-config.json \
+        -profile=kubernetes \
+        -hostname={{ item }},{{ hostvars[item]['ansible_host'] }} \
+        {{ deployer.certificate.directory }}/configs/{{ item }}-csr.json \
+        | cfssljson -bare {{ item }}
+    chdir: "{{ deployer.certificate.directory }}/worker"
+  with_items: '{{ groups["worker"] }}'

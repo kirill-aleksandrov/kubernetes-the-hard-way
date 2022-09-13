@@ -1,0 +1,20 @@
+deployer:
+  tools:
+    cfssl:
+      version: 1.6.2
+    cfssljson:
+      version: 1.6.2
+  certificate:
+    directory: /home/vagrant/kubernetes/certificates
+
+certificate:
+  ca:
+    config:
+      expiry: 8760h
+    attributes:
+      CN: Kubernetes
+      C: Russia
+      L: Saint-Petersburg
+      O: Home
+      OU: HomeLab
+      ST: Saint-Petersburg

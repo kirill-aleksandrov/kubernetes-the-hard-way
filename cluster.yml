@@ -1,0 +1,4 @@
+- name: Generate certificates
+  hosts: deployer
+  roles:
+    - certificates
