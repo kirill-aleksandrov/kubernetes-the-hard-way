@@ -1,5 +1,5 @@
 {
-  "CN": "kubernetes",
+  "CN": "system:kube-controller-manager",
   "key": {
     "algo": "rsa",
     "size": 2048
@@ -8,7 +8,7 @@
     {
       "C": "{{ certificate.ca.attributes.C }}",
       "L": "{{ certificate.ca.attributes.L }}",
-      "O": "{{ certificate.ca.attributes.O }}",
+      "O": "system:kube-controller-manager",
       "OU": "{{ certificate.ca.attributes.OU }}",
       "ST": "{{ certificate.ca.attributes.ST }}"
     }
