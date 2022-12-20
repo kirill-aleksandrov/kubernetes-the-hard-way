@@ -2,3 +2,8 @@
   hosts: deployer
   roles:
     - certificates
+
+- name: Set up Kubernetes API load balancer
+  hosts: lb-api
+  roles:
+    - api-load-balancer

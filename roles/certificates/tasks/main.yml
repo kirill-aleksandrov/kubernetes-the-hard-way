@@ -125,7 +125,7 @@
         | cfssljson -bare kubernetes
     chdir: "{{ deployer.certificate.directory }}/kubernetes"
 
-- name: Generate API server certificate
+- name: Generate service account certificate
   shell:
     cmd: |
       cfssl gencert \

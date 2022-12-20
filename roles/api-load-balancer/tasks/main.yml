@@ -1,0 +1,25 @@
+- name: Install haproxy
+  apt:
+    name: haproxy
+    update_cache: yes
+
+- name: Gather facts from controller hosts
+  setup:
+  delegate_to: "{{ item }}"
+  delegate_facts: yes
+  when: hostvars[item]['ansible_default_ipv4'] is not defined
+  with_items: "{{ groups['controller'] }}"
+
+- name: debug
+  debug:
+    var: hostvars
+
+- name: Generate config
+  template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+
+- name: Restart haproxy
+  service:
+    name: haproxy
+    state: restarted

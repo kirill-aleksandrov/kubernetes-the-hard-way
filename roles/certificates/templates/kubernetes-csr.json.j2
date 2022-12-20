@@ -1,17 +1,16 @@
 {
-    "CN": "system:kube-scheduler",
-    "key": {
-      "algo": "rsa",
-      "size": 2048
-    },
-    "names": [
-      {
-        "C": "{{ certificate.ca.attributes.C }}",
-        "L": "{{ certificate.ca.attributes.L }}",
-        "O": "system:kube-scheduler",
-        "OU": "{{ certificate.ca.attributes.OU }}",
-        "ST": "{{ certificate.ca.attributes.ST }}"
-      }
-    ]
-  }
-  
+  "CN": "system:kube-scheduler",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "{{ certificate.ca.attributes.C }}",
+      "L": "{{ certificate.ca.attributes.L }}",
+      "O": "system:kube-scheduler",
+      "OU": "{{ certificate.ca.attributes.OU }}",
+      "ST": "{{ certificate.ca.attributes.ST }}"
+    }
+  ]
+}
