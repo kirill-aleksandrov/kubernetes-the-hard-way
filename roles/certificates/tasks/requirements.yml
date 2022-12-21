@@ -1,11 +1,11 @@
 - name: Install cfssl
-  get_url:
-    url: https://github.com/cloudflare/cfssl/releases/download/v{{ deployer.tools.cfssl.version }}/cfssl_{{deployer.tools.cfssl.version }}_linux_amd64
+  ansible.builtin.get_url:
+    url: https://github.com/cloudflare/cfssl/releases/download/v{{ deployer.tools.cfssl.version }}/cfssl_{{ deployer.tools.cfssl.version }}_linux_amd64
     dest: /usr/local/bin/cfssl
     mode: a+x
 
 - name: Install cfssljson
-  get_url:
+  ansible.builtin.get_url:
     url: https://github.com/cloudflare/cfssl/releases/download/v{{ deployer.tools.cfssljson.version }}/cfssljson_{{ deployer.tools.cfssljson.version }}_linux_amd64
     dest: /usr/local/bin/cfssljson
     mode: a+x

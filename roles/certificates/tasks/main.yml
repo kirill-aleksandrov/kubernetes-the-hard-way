@@ -1,7 +1,8 @@
-- import_tasks: requirements.yml
+- name: Install requirements
+  ansible.builtin.import_tasks: requirements.yml
 
 - name: Prepare certificate directories
-  file:
+  ansible.builtin.file:
     path: '{{ item.path }}'
     state: directory
   with_items:
@@ -16,7 +17,7 @@
     - path: '{{ deployer.certificate.directory }}/service-account'
 
 - name: Render certificate configs
-  template:
+  ansible.builtin.template:
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
   with_items:
@@ -38,7 +39,7 @@
       dest: '{{ deployer.certificate.directory }}/configs/service-account-csr.json'
 
 - name: Generate root CA
-  shell:
+  ansible.builtin.shell:
     cmd: |
       cfssl gencert -initca \
         {{ deployer.certificate.directory }}/configs/ca-csr.json \
@@ -46,7 +47,7 @@
     chdir: "{{ deployer.certificate.directory }}/ca"
 
 - name: Generate admin client certificate
-  shell:
+  ansible.builtin.shell:
     cmd: |
       cfssl gencert \
         -ca={{ deployer.certificate.directory }}/ca/ca.pem \
@@ -58,13 +59,13 @@
     chdir: "{{ deployer.certificate.directory }}/admin"
 
 - name: Render worker certificate configs
-  template:
+  ansible.builtin.template:
     src: worker-csr.json.j2
     dest: '{{ deployer.certificate.directory }}/configs/{{ item }}-csr.json'
   with_items: '{{ groups["worker"] }}'
 
 - name: Generate worker certificates
-  shell:
+  ansible.builtin.shell:
     cmd: |
       cfssl gencert \
         -ca={{ deployer.certificate.directory }}/ca/ca.pem \
@@ -78,7 +79,7 @@
   with_items: '{{ groups["worker"] }}'
 
 - name: Generate controller manager certificate
-  shell:
+  ansible.builtin.shell:
     cmd: |
       cfssl gencert \
         -ca={{ deployer.certificate.directory }}/ca/ca.pem \
@@ -90,7 +91,7 @@
     chdir: "{{ deployer.certificate.directory }}/kube-controller-manager"
 
 - name: Generate kube-proxy certificate
-  shell:
+  ansible.builtin.shell:
     cmd: |
       cfssl gencert \
         -ca={{ deployer.certificate.directory }}/ca/ca.pem \
@@ -102,7 +103,7 @@
     chdir: "{{ deployer.certificate.directory }}/kube-proxy"
 
 - name: Generate scheduler certificate
-  shell:
+  ansible.builtin.shell:
     cmd: |
       cfssl gencert \
         -ca={{ deployer.certificate.directory }}/ca/ca.pem \
@@ -114,7 +115,7 @@
     chdir: "{{ deployer.certificate.directory }}/kube-scheduler"
 
 - name: Generate API server certificate
-  shell:
+  ansible.builtin.shell:
     cmd: |
       cfssl gencert \
         -ca={{ deployer.certificate.directory }}/ca/ca.pem \
@@ -126,7 +127,7 @@
     chdir: "{{ deployer.certificate.directory }}/kubernetes"
 
 - name: Generate service account certificate
-  shell:
+  ansible.builtin.shell:
     cmd: |
       cfssl gencert \
         -ca={{ deployer.certificate.directory }}/ca/ca.pem \

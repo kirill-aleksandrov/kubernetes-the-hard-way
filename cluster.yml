@@ -6,4 +6,4 @@
 - name: Set up Kubernetes API load balancer
   hosts: lb-api
   roles:
-    - api-load-balancer
+    - api_load_balancer
