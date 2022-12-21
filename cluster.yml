@@ -8,6 +8,11 @@
   roles:
     - auth_configs
 
+- name: Generate encryption config
+  hosts: deployer
+  roles:
+    - encryption_config
+
 - name: Set up Kubernetes API load balancer
   hosts: lb-api
   roles:

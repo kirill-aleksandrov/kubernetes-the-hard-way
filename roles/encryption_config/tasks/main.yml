@@ -1,0 +1,9 @@
+- name: Prepare config directories
+  ansible.builtin.file:
+    path: '{{ deployer.encryption_config.directory }}'
+    state: directory
+
+- name: Generate encryption config
+  ansible.builtin.template:
+    src: encryption-config.yaml.j2
+    dest: '{{ deployer.encryption_config.directory }}/encryption-config.yaml'

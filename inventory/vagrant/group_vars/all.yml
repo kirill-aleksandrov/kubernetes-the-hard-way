@@ -10,6 +10,8 @@ deployer:
     directory: /home/vagrant/kubernetes/certificates
   auth_config:
     directory: /home/vagrant/kubernetes/auth_configs
+  encryption_config:
+    directory: /home/vagrant/kubernetes/encryption_config
 
 certificate:
   ca:
