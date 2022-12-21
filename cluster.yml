@@ -3,6 +3,11 @@
   roles:
     - certificates
 
+- name: Generate authentication configs
+  hosts: deployer
+  roles:
+    - auth_configs
+
 - name: Set up Kubernetes API load balancer
   hosts: lb-api
   roles:

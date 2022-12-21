@@ -4,8 +4,12 @@ deployer:
       version: 1.6.2
     cfssljson:
       version: 1.6.2
+    kubectl:
+      version: 1.26.0
   certificate:
     directory: /home/vagrant/kubernetes/certificates
+  auth_config:
+    directory: /home/vagrant/kubernetes/auth_configs
 
 certificate:
   ca:
@@ -18,3 +22,6 @@ certificate:
       O: Home
       OU: HomeLab
       ST: Saint-Petersburg
+
+cluster:
+  name: the-hard-way

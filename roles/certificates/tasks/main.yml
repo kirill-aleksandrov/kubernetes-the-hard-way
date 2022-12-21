@@ -122,7 +122,7 @@
         -ca-key={{ deployer.certificate.directory }}/ca/ca-key.pem \
         -config={{ deployer.certificate.directory }}/configs/ca-config.json \
         -profile=kubernetes \
-        {{ deployer.certificate.directory }}/configs/kubernetes.json \
+        {{ deployer.certificate.directory }}/configs/kubernetes-csr.json \
         | cfssljson -bare kubernetes
     chdir: "{{ deployer.certificate.directory }}/kubernetes"
 
