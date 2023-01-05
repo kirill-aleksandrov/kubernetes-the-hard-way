@@ -1,0 +1,40 @@
+- name: Prepare certificate directories
+  ansible.builtin.file:
+    path: '{{ item.path }}'
+    state: directory
+  with_items:
+    - path: '{{ deployer.certificate.directory }}/ca/intermediates/etcd'
+    - path: '{{ deployer.certificate.directory }}/ca/root'
+    - path: '{{ deployer.certificate.directory }}/configs/ca/intermediates'
+
+- name: Render certificate configs
+  ansible.builtin.template:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+    - src: cfssl-config.json.j2
+      dest: '{{ deployer.certificate.directory }}/configs/cfssl-config.json'
+    - src: ca-csr.json.j2
+      dest: '{{ deployer.certificate.directory }}/configs/ca/ca-csr.json'
+    - src: etcd-ca-csr.json.j2
+      dest: '{{ deployer.certificate.directory }}/configs/ca/intermediates/etcd-ca-csr.json'
+
+- name: Generate root CA
+  ansible.builtin.shell:
+    cmd: |
+      cfssl gencert -initca \
+        {{ deployer.certificate.directory }}/configs/ca/ca-csr.json \
+        | cfssljson -bare ca
+    chdir: "{{ deployer.certificate.directory }}/ca/root"
+
+- name: Generate intermediate etcd CA
+  shell: |
+    cfssl gencert \
+      -ca={{ deployer.certificate.directory }}/ca/root/ca.pem \
+      -ca-key={{ deployer.certificate.directory }}/ca/root/ca-key.pem \
+      -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
+      -profile=intermediate \
+      {{ deployer.certificate.directory }}/configs/ca/intermediates/etcd-ca-csr.json \
+      | cfssljson -bare etcd-ca
+  args:
+    chdir: "{{ deployer.certificate.directory }}/ca/intermediates/etcd"

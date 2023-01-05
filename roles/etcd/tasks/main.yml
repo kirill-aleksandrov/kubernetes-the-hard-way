@@ -1,0 +1,59 @@
+- name: Download etcd
+  ansible.builtin.get_url:
+    url: https://github.com/etcd-io/etcd/releases/download/v{{ cluster.etcd.version }}/etcd-v{{ cluster.etcd.version }}-linux-amd64.tar.gz
+    dest: /tmp
+    mode: 0444
+
+- name: Unarchive etcd
+  ansible.builtin.unarchive:
+    src: /tmp/etcd-v{{ cluster.etcd.version }}-linux-amd64.tar.gz
+    dest: /tmp
+    remote_src: yes
+
+- name: Install etcd and etcdctl
+  ansible.builtin.copy:
+    src: /tmp/etcd-v{{ cluster.etcd.version }}-linux-amd64/{{ item }}
+    dest: /usr/local/bin/{{ item }}
+    remote_src: yes
+    mode: 0744
+  with_items:
+    - etcd
+    - etcdctl
+
+- name: Make directories
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: directory
+    mode: 0700
+  with_items:
+    - /etc/etcd
+    - /var/lib/etcd
+
+- name: Distribute etcd certificates
+  ansible.builtin.copy:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    mode: 0600
+  with_items:
+    - src: "{{ deployer.certificate.directory }}/ca/intermediates/etcd/etcd-ca.pem"
+      dest: /etc/etcd/etcd-ca.pem
+    - src: "{{ deployer.certificate.directory }}/etcd/etcd/{{ inventory_hostname }}.pem"
+      dest: /etc/etcd/etcd.pem
+    - src: "{{ deployer.certificate.directory }}/etcd/etcd/{{ inventory_hostname }}-key.pem"
+      dest: /etc/etcd/etcd-key.pem
+    - src: "{{ deployer.certificate.directory }}/etcd/etcd-peer/etcd-peer.pem"
+      dest: /etc/etcd/etcd-peer.pem
+    - src: "{{ deployer.certificate.directory }}/etcd/etcd-peer/etcd-peer-key.pem"
+      dest: /etc/etcd/etcd-peer-key.pem
+
+- name: Generate etcd service
+  ansible.builtin.template:
+    src: etcd.service.j2
+    dest: /etc/systemd/system/etcd.service
+    mode: 0644
+
+- name: Start etcd service
+  ansible.builtin.service:
+    name: etcd
+    daemon_reload: yes
+    state: started

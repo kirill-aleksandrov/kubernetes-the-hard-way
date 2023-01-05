@@ -3,13 +3,6 @@
     name: haproxy
     update_cache: true
 
-- name: Gather facts from controller hosts
-  ansible.builtin.setup:
-  delegate_to: "{{ item }}"
-  delegate_facts: true
-  when: hostvars[item]['ansible_default_ipv4'] is not defined
-  with_items: "{{ groups['controller'] }}"
-
 - name: Generate config
   ansible.builtin.template:
     src: haproxy.cfg.j2

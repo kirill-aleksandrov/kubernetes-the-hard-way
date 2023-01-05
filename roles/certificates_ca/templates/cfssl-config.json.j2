@@ -1,0 +1,48 @@
+{
+  "signing": {
+    "default": {
+      "expiry": "{{ certificate.ca.config.expiry }}"
+    },
+    "profiles": {
+      "intermediate": {
+        "usages": [
+          "digital signature",
+          "cert sign",
+          "crl sign",
+          "signing"
+        ],
+        "ca_constraint": {
+          "is_ca": true,
+          "max_path_len": 0,
+          "max_path_len_zero": true
+        },
+        "expiry": "{{ certificate.ca.config.expiry }}"
+        },
+        "client": {
+          "usages": [
+            "digital signature",
+            "key encipherment",
+            "client auth"
+          ],
+          "expiry": "{{ certificate.ca.config.expiry }}"
+        },
+        "server": {
+          "usages": [
+            "digital signature",
+            "key encipherment",
+            "server auth"
+          ],
+          "expiry": "{{ certificate.ca.config.expiry }}"
+        },
+        "client-server": {
+          "usages": [
+            "digital signature",
+            "key encipherment",
+            "client auth",
+            "server auth"
+          ],
+          "expiry": "{{ certificate.ca.config.expiry }}"
+        }
+    }
+  }
+}

@@ -1,0 +1,62 @@
+- name: Prepare certificate directories
+  ansible.builtin.file:
+    path: '{{ item.path }}'
+    state: directory
+  with_items:
+    - path: '{{ deployer.certificate.directory }}/configs/etcd'
+    - path: '{{ deployer.certificate.directory }}/etcd/etcd'
+    - path: '{{ deployer.certificate.directory }}/etcd/etcd-peer'
+    - path: '{{ deployer.certificate.directory }}/etcd/etcd-client'
+
+- name: Render certificate configs
+  ansible.builtin.template:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+    - src: etcd-csr.json.j2
+      dest: '{{ deployer.certificate.directory }}/configs/etcd/etcd-csr.json'
+    - src: etcd-peer-csr.json.j2
+      dest: '{{ deployer.certificate.directory }}/configs/etcd/etcd-peer-csr.json'
+    - src: etcd-client-csr.json.j2
+      dest: '{{ deployer.certificate.directory }}/configs/etcd/etcd-client-csr.json'
+
+- name: Generate etcd certificate
+  args:
+    chdir: '{{ deployer.certificate.directory }}/etcd/etcd'
+  shell: |
+    cfssl gencert \
+    -ca={{ deployer.certificate.directory }}/ca/intermediates/etcd/etcd-ca.pem \
+    -ca-key={{ deployer.certificate.directory }}/ca/intermediates/etcd/etcd-ca-key.pem \
+    -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
+    -profile=client-server \
+    -hostname=localhost,127.0.0.1,{{ hostvars[item]['ansible_host'] }} \
+    {{ deployer.certificate.directory }}/configs/etcd/etcd-csr.json \
+    | cfssljson -bare {{ item }}
+  with_items: '{{ groups["etcd"] }}'
+
+- name: Generate etcd-peer certificate
+  vars:
+    etcd_ip: '{{ groups["etcd"] | map("extract", hostvars) | map(attribute="ansible_host") | join(",") }}'
+  args:
+    chdir: '{{ deployer.certificate.directory }}/etcd/etcd-peer'
+  shell: |
+    cfssl gencert \
+    -ca={{ deployer.certificate.directory }}/ca/intermediates/etcd/etcd-ca.pem \
+    -ca-key={{ deployer.certificate.directory }}/ca/intermediates/etcd/etcd-ca-key.pem \
+    -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
+    -profile=client-server \
+    -hostname=localhost,127.0.0.1,{{ etcd_ip }} \
+    {{ deployer.certificate.directory }}/configs/etcd/etcd-peer-csr.json \
+    | cfssljson -bare etcd-peer
+
+- name: Generate etcd-client certificate
+  args:
+    chdir: '{{ deployer.certificate.directory }}/etcd/etcd-client'
+  shell: |
+    cfssl gencert \
+    -ca={{ deployer.certificate.directory }}/ca/intermediates/etcd/etcd-ca.pem \
+    -ca-key={{ deployer.certificate.directory }}/ca/intermediates/etcd/etcd-ca-key.pem \
+    -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
+    -profile=client \
+    {{ deployer.certificate.directory }}/configs/etcd/etcd-client-csr.json \
+    | cfssljson -bare etcd-client

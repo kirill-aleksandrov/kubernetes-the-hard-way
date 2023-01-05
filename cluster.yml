@@ -1,19 +1,37 @@
+- name: Prepare
+  hosts: all
+  roles:
+    - prepare
+
+- name: Generate CA
+  hosts: localhost
+  roles:
+    - certificates_ca
+
 - name: Generate certificates
-  hosts: deployer
+  hosts: localhost
   roles:
-    - certificates
+#    - certificates
+    - certificates_etcd
+#
+#- name: Generate authentication configs
+#  hosts: localhost
+#  roles:
+#    - auth_configs
+#
+#- name: Generate encryption config
+#  hosts: localhost
+#  roles:
+#    - encryption_config
+#
+#- name: Set up Kubernetes API load balancer
+#  hosts: lb-api
+#  become: yes
+#  roles:
+#    - api_load_balancer
 
-- name: Generate authentication configs
-  hosts: deployer
+- name: Set up etcd
+  hosts: etcd
+  become: yes
   roles:
-    - auth_configs
-
-- name: Generate encryption config
-  hosts: deployer
-  roles:
-    - encryption_config
-
-- name: Set up Kubernetes API load balancer
-  hosts: lb-api
-  roles:
-    - api_load_balancer
+    - etcd

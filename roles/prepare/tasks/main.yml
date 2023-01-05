@@ -1,0 +1,3 @@
+- name: Gather facts from controller hosts
+  ansible.builtin.setup: {}
+

@@ -2,3 +2,6 @@
 .vscode/
 .idea/
 venv/
+auth_configs/
+certificates/
+encryption_config/

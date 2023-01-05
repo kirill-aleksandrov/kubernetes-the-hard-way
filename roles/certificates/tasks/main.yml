@@ -1,13 +1,8 @@
-- name: Install requirements
-  ansible.builtin.import_tasks: requirements.yml
-
 - name: Prepare certificate directories
   ansible.builtin.file:
     path: '{{ item.path }}'
     state: directory
   with_items:
-    - path: '{{ deployer.certificate.directory }}/configs'
-    - path: '{{ deployer.certificate.directory }}/ca'
     - path: '{{ deployer.certificate.directory }}/admin'
     - path: '{{ deployer.certificate.directory }}/worker'
     - path: '{{ deployer.certificate.directory }}/kube-controller-manager'
@@ -21,10 +16,6 @@
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
   with_items:
-    - src: ca-config.json.j2
-      dest: '{{ deployer.certificate.directory }}/configs/ca-config.json'
-    - src: ca-csr.json.j2
-      dest: '{{ deployer.certificate.directory }}/configs/ca-csr.json'
     - src: admin-csr.json.j2
       dest: '{{ deployer.certificate.directory }}/configs/admin-csr.json'
     - src: kube-controller-manager-csr.json.j2
@@ -37,14 +28,6 @@
       dest: '{{ deployer.certificate.directory }}/configs/kubernetes-csr.json'
     - src: service-account-csr.json.j2
       dest: '{{ deployer.certificate.directory }}/configs/service-account-csr.json'
-
-- name: Generate root CA
-  ansible.builtin.shell:
-    cmd: |
-      cfssl gencert -initca \
-        {{ deployer.certificate.directory }}/configs/ca-csr.json \
-        | cfssljson -bare ca
-    chdir: "{{ deployer.certificate.directory }}/ca"
 
 - name: Generate admin client certificate
   ansible.builtin.shell:
@@ -70,7 +53,7 @@
       cfssl gencert \
         -ca={{ deployer.certificate.directory }}/ca/ca.pem \
         -ca-key={{ deployer.certificate.directory }}/ca/ca-key.pem \
-        -config={{ deployer.certificate.directory }}/configs/ca-config.json \
+        -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
         -profile=kubernetes \
         -hostname={{ item }},{{ hostvars[item]['ansible_host'] }} \
         {{ deployer.certificate.directory }}/configs/{{ item }}-csr.json \
@@ -84,7 +67,7 @@
       cfssl gencert \
         -ca={{ deployer.certificate.directory }}/ca/ca.pem \
         -ca-key={{ deployer.certificate.directory }}/ca/ca-key.pem \
-        -config={{ deployer.certificate.directory }}/configs/ca-config.json \
+        -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
         -profile=kubernetes \
         {{ deployer.certificate.directory }}/configs/kube-controller-manager-csr.json \
         | cfssljson -bare kube-controller-manager
@@ -96,7 +79,7 @@
       cfssl gencert \
         -ca={{ deployer.certificate.directory }}/ca/ca.pem \
         -ca-key={{ deployer.certificate.directory }}/ca/ca-key.pem \
-        -config={{ deployer.certificate.directory }}/configs/ca-config.json \
+        -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
         -profile=kubernetes \
         {{ deployer.certificate.directory }}/configs/kube-proxy-csr.json \
         | cfssljson -bare kube-proxy
@@ -108,7 +91,7 @@
       cfssl gencert \
         -ca={{ deployer.certificate.directory }}/ca/ca.pem \
         -ca-key={{ deployer.certificate.directory }}/ca/ca-key.pem \
-        -config={{ deployer.certificate.directory }}/configs/ca-config.json \
+        -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
         -profile=kubernetes \
         {{ deployer.certificate.directory }}/configs/kube-scheduler-csr.json \
         | cfssljson -bare kube-scheduler
@@ -120,7 +103,7 @@
       cfssl gencert \
         -ca={{ deployer.certificate.directory }}/ca/ca.pem \
         -ca-key={{ deployer.certificate.directory }}/ca/ca-key.pem \
-        -config={{ deployer.certificate.directory }}/configs/ca-config.json \
+        -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
         -profile=kubernetes \
         {{ deployer.certificate.directory }}/configs/kubernetes-csr.json \
         | cfssljson -bare kubernetes
@@ -132,7 +115,7 @@
       cfssl gencert \
         -ca={{ deployer.certificate.directory }}/ca/ca.pem \
         -ca-key={{ deployer.certificate.directory }}/ca/ca-key.pem \
-        -config={{ deployer.certificate.directory }}/configs/ca-config.json \
+        -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
         -profile=kubernetes \
         {{ deployer.certificate.directory }}/configs/service-account-csr.json \
         | cfssljson -bare kubernetes

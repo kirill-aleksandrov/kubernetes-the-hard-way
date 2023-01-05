@@ -1,22 +1,15 @@
 deployer:
-  tools:
-    cfssl:
-      version: 1.6.2
-    cfssljson:
-      version: 1.6.2
-    kubectl:
-      version: 1.26.0
   certificate:
-    directory: /home/vagrant/kubernetes/certificates
+    directory: '{{ playbook_dir }}/certificates'
   auth_config:
-    directory: /home/vagrant/kubernetes/auth_configs
+    directory: '{{ playbook_dir }}/auth_configs'
   encryption_config:
-    directory: /home/vagrant/kubernetes/encryption_config
+    directory: '{{ playbook_dir }}/encryption_config'
 
 certificate:
   ca:
     config:
-      expiry: 8760h
+      expiry: 8760h # 1 year
     attributes:
       CN: Kubernetes
       C: Russia
@@ -27,3 +20,5 @@ certificate:
 
 cluster:
   name: the-hard-way
+  etcd:
+    version: 3.4.23
