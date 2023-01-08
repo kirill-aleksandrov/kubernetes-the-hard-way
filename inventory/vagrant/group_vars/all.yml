@@ -22,3 +22,5 @@ cluster:
   name: the-hard-way
   etcd:
     version: 3.4.23
+  kubernetes:
+    version: 1.26.0

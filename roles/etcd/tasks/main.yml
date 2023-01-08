@@ -35,18 +35,18 @@
     dest: '{{ item.dest }}'
     mode: 0600
   with_items:
-    - src: "{{ deployer.certificate.directory }}/ca/intermediates/etcd/etcd-ca.pem"
+    - src: '{{ deployer.certificate.directory }}/ca/intermediates/etcd/etcd-ca.pem'
       dest: /etc/etcd/etcd-ca.pem
-    - src: "{{ deployer.certificate.directory }}/etcd/etcd/{{ inventory_hostname }}.pem"
+    - src: '{{ deployer.certificate.directory }}/etcd/etcd/{{ inventory_hostname }}.pem'
       dest: /etc/etcd/etcd.pem
-    - src: "{{ deployer.certificate.directory }}/etcd/etcd/{{ inventory_hostname }}-key.pem"
+    - src: '{{ deployer.certificate.directory }}/etcd/etcd/{{ inventory_hostname }}-key.pem'
       dest: /etc/etcd/etcd-key.pem
-    - src: "{{ deployer.certificate.directory }}/etcd/etcd-peer/etcd-peer.pem"
+    - src: '{{ deployer.certificate.directory }}/etcd/etcd-peer/etcd-peer.pem'
       dest: /etc/etcd/etcd-peer.pem
-    - src: "{{ deployer.certificate.directory }}/etcd/etcd-peer/etcd-peer-key.pem"
+    - src: '{{ deployer.certificate.directory }}/etcd/etcd-peer/etcd-peer-key.pem'
       dest: /etc/etcd/etcd-peer-key.pem
 
-- name: Generate etcd service
+- name: Render etcd service
   ansible.builtin.template:
     src: etcd.service.j2
     dest: /etc/systemd/system/etcd.service
@@ -56,4 +56,4 @@
   ansible.builtin.service:
     name: etcd
     daemon_reload: yes
-    state: started
+    state: restarted

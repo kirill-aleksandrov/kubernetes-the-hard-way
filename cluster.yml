@@ -13,25 +13,32 @@
   roles:
 #    - certificates
     - certificates_etcd
-#
-#- name: Generate authentication configs
-#  hosts: localhost
-#  roles:
-#    - auth_configs
-#
-#- name: Generate encryption config
-#  hosts: localhost
-#  roles:
-#    - encryption_config
-#
-#- name: Set up Kubernetes API load balancer
-#  hosts: lb-api
-#  become: yes
-#  roles:
-#    - api_load_balancer
+    - certificates_control_plane
+
+- name: Generate authentication configs
+  hosts: localhost
+  roles:
+    - auth_configs
+
+- name: Generate encryption config
+  hosts: localhost
+  roles:
+    - encryption_config
 
 - name: Set up etcd
   hosts: etcd
   become: yes
   roles:
     - etcd
+
+- name: Set up control plane
+  hosts: controller
+  become: yes
+  roles:
+    - control_plane
+
+- name: Set up Kubernetes API load balancer
+  hosts: lb-api
+  become: yes
+  roles:
+    - api_load_balancer

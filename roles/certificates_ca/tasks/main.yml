@@ -4,6 +4,7 @@
     state: directory
   with_items:
     - path: '{{ deployer.certificate.directory }}/ca/intermediates/etcd'
+    - path: '{{ deployer.certificate.directory }}/ca/intermediates/kubernetes'
     - path: '{{ deployer.certificate.directory }}/ca/root'
     - path: '{{ deployer.certificate.directory }}/configs/ca/intermediates'
 
@@ -18,6 +19,8 @@
       dest: '{{ deployer.certificate.directory }}/configs/ca/ca-csr.json'
     - src: etcd-ca-csr.json.j2
       dest: '{{ deployer.certificate.directory }}/configs/ca/intermediates/etcd-ca-csr.json'
+    - src: kubernetes-ca-csr.json.j2
+      dest: '{{ deployer.certificate.directory }}/configs/ca/intermediates/kubernetes-ca-csr.json'
 
 - name: Generate root CA
   ansible.builtin.shell:
@@ -38,3 +41,15 @@
       | cfssljson -bare etcd-ca
   args:
     chdir: "{{ deployer.certificate.directory }}/ca/intermediates/etcd"
+
+- name: Generate intermediate kubernetes CA
+  shell: |
+    cfssl gencert \
+      -ca={{ deployer.certificate.directory }}/ca/root/ca.pem \
+      -ca-key={{ deployer.certificate.directory }}/ca/root/ca-key.pem \
+      -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
+      -profile=intermediate \
+      {{ deployer.certificate.directory }}/configs/ca/intermediates/kubernetes-ca-csr.json \
+      | cfssljson -bare kubernetes-ca
+  args:
+    chdir: "{{ deployer.certificate.directory }}/ca/intermediates/kubernetes"

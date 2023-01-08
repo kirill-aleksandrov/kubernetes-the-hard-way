@@ -1,5 +1,5 @@
 {
-  "CN": "system:kube-scheduler",
+  "CN": "kubernetes-admin",
   "key": {
     "algo": "rsa",
     "size": 2048
@@ -8,7 +8,7 @@
     {
       "C": "{{ certificate.ca.attributes.C }}",
       "L": "{{ certificate.ca.attributes.L }}",
-      "O": "system:kube-scheduler",
+      "O": "system:masters",
       "OU": "{{ certificate.ca.attributes.OU }}",
       "ST": "{{ certificate.ca.attributes.ST }}"
     }

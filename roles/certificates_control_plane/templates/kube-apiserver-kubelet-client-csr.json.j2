@@ -1,5 +1,5 @@
 {
-  "CN": "etcd-ca",
+  "CN": "kube-apiserver-kubelet-client",
   "key": {
     "algo": "rsa",
     "size": 2048
@@ -7,7 +7,7 @@
   "names": [{
     "C": "{{ certificate.ca.attributes.C }}",
     "L": "{{ certificate.ca.attributes.L }}",
-    "O": "Etcd {{ certificate.ca.attributes.O }}",
+    "O": "system:masters",
     "OU": "{{ certificate.ca.attributes.OU }}",
     "ST": "{{ certificate.ca.attributes.ST }}"
   }]

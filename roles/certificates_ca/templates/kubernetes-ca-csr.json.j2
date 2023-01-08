@@ -1,5 +1,5 @@
 {
-  "CN": "etcd-ca",
+  "CN": "kubernetes-ca",
   "key": {
     "algo": "rsa",
     "size": 2048
@@ -7,7 +7,7 @@
   "names": [{
     "C": "{{ certificate.ca.attributes.C }}",
     "L": "{{ certificate.ca.attributes.L }}",
-    "O": "Etcd {{ certificate.ca.attributes.O }}",
+    "O": "Kubernetes {{ certificate.ca.attributes.O }}",
     "OU": "{{ certificate.ca.attributes.OU }}",
     "ST": "{{ certificate.ca.attributes.ST }}"
   }]

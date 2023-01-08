@@ -1,0 +1,120 @@
+- name: Prepare certificate directories
+  file:
+    path: "{{ item.path }}"
+    state: directory
+  with_items:
+    - path: '{{ deployer.certificate.directory }}/configs/controller'
+    - path: '{{ deployer.certificate.directory }}/controller/kube-apiserver'
+    - path: '{{ deployer.certificate.directory }}/controller/kube-apiserver-kubelet-client'
+    - path: '{{ deployer.certificate.directory }}/controller/kubernetes-admin'
+    - path: '{{ deployer.certificate.directory }}/controller/kube-controller-manager'
+    - path: '{{ deployer.certificate.directory }}/controller/kube-scheduler'
+    - path: '{{ deployer.certificate.directory }}/controller/service-account'
+
+- name: Render certificate configs
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  with_items:
+    - src: 'kube-apiserver-csr.json.j2'
+      dest: '{{ deployer.certificate.directory }}/configs/controller/kube-apiserver-csr.json'
+    - src: 'kube-apiserver-kubelet-client-csr.json.j2'
+      dest: '{{ deployer.certificate.directory }}/configs/controller/kube-apiserver-kubelet-client-csr.json'
+    - src: 'kubernetes-admin-csr.json.j2'
+      dest: '{{ deployer.certificate.directory }}/configs/controller/kubernetes-admin-csr.json'
+    - src: 'kube-controller-manager-csr.json.j2'
+      dest: '{{ deployer.certificate.directory }}/configs/controller/kube-controller-manager-csr.json'
+    - src: 'kube-scheduler-csr.json.j2'
+      dest: '{{ deployer.certificate.directory }}/configs/controller/kube-scheduler-csr.json'
+    - src: 'service-account-csr.json.j2'
+      dest: '{{ deployer.certificate.directory }}/configs/controller/service-account-csr.json'
+
+- name: Generate kube-apiserver certificate
+  vars:
+    kubernetes_hostnames: kubernetes,kubernetes.default,kubernetes.default.svc,kubernetes.default.svc.cluster,kubernetes.svc.cluster.local
+  args:
+    chdir: "{{ deployer.certificate.directory }}/controller/kube-apiserver"
+  shell: |
+    cfssl gencert \
+    -ca={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca.pem \
+    -ca-key={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca-key.pem \
+    -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
+    -profile=server \
+    -hostname=localhost,127.0.0.1,10.32.0.1,{{ hostvars[item]['ansible_host'] }},{{ kubernetes_hostnames }} \
+    {{ deployer.certificate.directory }}/configs/controller/kube-apiserver-csr.json \
+    | cfssljson -bare {{ item }}-kube-apiserver
+  with_items: "{{ groups['controller'] }}"
+
+- name: Generate kube-apiserver-kubelet-client certificate
+  args:
+    chdir: "{{ deployer.certificate.directory }}/controller/kube-apiserver-kubelet-client"
+  shell: |
+    cfssl gencert \
+    -ca={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca.pem \
+    -ca-key={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca-key.pem \
+    -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
+    -profile=client \
+    {{ deployer.certificate.directory }}/configs/controller/kube-apiserver-kubelet-client-csr.json \
+    | cfssljson -bare kube-apiserver-kubelet-client
+
+- name: Generate kubernetes-admin certificate
+  args:
+    chdir: "{{ deployer.certificate.directory }}/controller/kubernetes-admin"
+  shell: |
+    cfssl gencert \
+    -ca={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca.pem \
+    -ca-key={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca-key.pem \
+    -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
+    -profile=client \
+    {{ deployer.certificate.directory }}/configs/controller/kubernetes-admin-csr.json \
+    | cfssljson -bare kubernetes-admin
+
+- name: Generate kube-controller-manager certificate
+  args:
+    chdir: "{{ deployer.certificate.directory }}/controller/kube-controller-manager"
+  shell: |
+    cfssl gencert \
+    -ca={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca.pem \
+    -ca-key={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca-key.pem \
+    -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
+    -profile=client \
+    {{ deployer.certificate.directory }}/configs/controller/kube-controller-manager-csr.json \
+    | cfssljson -bare kube-controller-manager
+
+- name: Generate kube-scheduler certificate
+  args:
+    chdir: "{{ deployer.certificate.directory }}/controller/kube-scheduler"
+  shell: |
+    cfssl gencert \
+    -ca={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca.pem \
+    -ca-key={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca-key.pem \
+    -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
+    -profile=client \
+    {{ deployer.certificate.directory }}/configs/controller/kube-scheduler-csr.json \
+    | cfssljson -bare kube-scheduler
+
+- name: print to stdout
+  command: cfssl gencert \
+    -ca={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca.pem \
+    -ca-key={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca-key.pem \
+    -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
+    -profile=client \
+    {{ deployer.certificate.directory }}/configs/controller/service-account-csr.json
+  register: hello
+
+- name: debug
+  debug:
+    msg: '{{ hello }}'
+
+
+- name: Generate service account certificate
+  args:
+    chdir: "{{ deployer.certificate.directory }}/controller/service-account"
+  shell: |
+    cfssl gencert \
+    -ca={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca.pem \
+    -ca-key={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca-key.pem \
+    -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
+    -profile=client \
+    {{ deployer.certificate.directory }}/configs/controller/service-account-csr.json \
+    | cfssljson -bare service-account

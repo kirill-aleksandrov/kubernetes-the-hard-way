@@ -1,0 +1,98 @@
+- name: Create configuration directories
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: directory
+  with_items:
+    - /etc/kubernetes/config
+    - /var/lib/kubernetes
+
+- name: Download binaries
+  ansible.builtin.get_url:
+    url: https://dl.k8s.io/v{{ cluster.kubernetes.version }}/bin/linux/amd64/{{ item }}
+    dest: /tmp
+    mode: 0444
+  with_items:
+    - kube-apiserver
+    - kube-controller-manager
+    - kube-scheduler
+    - kubectl
+
+- name: Install binaries
+  ansible.builtin.copy:
+    src: /tmp/{{ item }}
+    dest: /usr/local/bin/{{ item }}
+    remote_src: yes
+    mode: 0744
+  with_items:
+    - kube-apiserver
+    - kube-controller-manager
+    - kube-scheduler
+    - kubectl
+
+- name: Distribute kubernetes certificates and configs
+  ansible.builtin.copy:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    mode: 0600
+  with_items:
+    - src: '{{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca.pem'
+      dest: /var/lib/kubernetes/kubernetes-ca.pem
+    - src: '{{ deployer.certificate.directory }}/ca/intermediates/etcd/etcd-ca.pem'
+      dest: /var/lib/kubernetes/etcd-ca.pem
+
+    - src: '{{ deployer.certificate.directory }}/etcd/etcd-client/etcd-client.pem'
+      dest: /var/lib/kubernetes/etcd-client.pem
+    - src: '{{ deployer.certificate.directory }}/etcd/etcd-client/etcd-client-key.pem'
+      dest: /var/lib/kubernetes/etcd-client-key.pem
+
+    - src: '{{ deployer.certificate.directory }}/controller/kube-apiserver/{{ ansible_hostname }}-kube-apiserver.pem'
+      dest: /var/lib/kubernetes/kube-apiserver.pem
+    - src: '{{ deployer.certificate.directory }}/controller/kube-apiserver/{{ ansible_hostname }}-kube-apiserver-key.pem'
+      dest: /var/lib/kubernetes/kube-apiserver-key.pem
+
+    - src: '{{ deployer.certificate.directory }}/controller/kube-apiserver-kubelet-client/kube-apiserver-kubelet-client.pem'
+      dest: /var/lib/kubernetes/kube-apiserver-kubelet-client.pem
+    - src: '{{ deployer.certificate.directory }}/controller/kube-apiserver-kubelet-client/kube-apiserver-kubelet-client-key.pem'
+      dest: /var/lib/kubernetes/kube-apiserver-kubelet-client-key.pem
+
+    - src: '{{ deployer.certificate.directory }}/controller/service-account/service-account.pem'
+      dest: /var/lib/kubernetes/service-account.pem
+    - src: '{{ deployer.certificate.directory }}/controller/service-account/service-account-key.pem'
+      dest: /var/lib/kubernetes/service-account-key.pem
+
+    - src: '{{ deployer.encryption_config.directory }}/encryption-config.yaml'
+      dest: /var/lib/kubernetes/encryption-config.yaml
+
+    - src: '{{ deployer.encryption_config.directory }}/encryption-config.yaml'
+      dest: /var/lib/kubernetes/encryption-config.yaml
+
+    - src: '{{ deployer.auth_config.directory }}/kube-controller-manager/kube-controller-manager.kubeconfig'
+      dest: /var/lib/kubernetes/kube-controller-manager.kubeconfig
+    - src: '{{ deployer.auth_config.directory }}/kube-scheduler/kube-scheduler.kubeconfig'
+      dest: /var/lib/kubernetes/kube-scheduler.kubeconfig
+
+    - src: kube-scheduler.yaml
+      dest: /var/lib/kubernetes/kube-scheduler.yaml
+
+- name: Render services
+  ansible.builtin.template:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    mode: 0644
+  with_items:
+    - src: kube-apiserver.service.j2
+      dest: /etc/systemd/system/kube-apiserver.service
+    - src: kube-controller-manager.service.j2
+      dest: /etc/systemd/system/kube-controller-manager.service
+    - src: kube-scheduler.service.j2
+      dest: /etc/systemd/system/kube-scheduler.service
+
+- name: Start services
+  ansible.builtin.service:
+    name: '{{ item }}'
+    daemon_reload: yes
+    state: restarted
+  with_items:
+    - kube-apiserver
+    - kube-controller-manager
+    - kube-scheduler
