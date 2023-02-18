@@ -3,7 +3,7 @@ Description=Kubernetes Controller Manager
 [Service]
 ExecStart=/usr/local/bin/kube-controller-manager \
   --bind-address=0.0.0.0 \
-  --cluster-cidr=10.200.0.0/16 \
+  --cluster-cidr={{ cluster.cidr }} \
   --cluster-name={{ cluster.name }} \
   --cluster-signing-cert-file=/var/lib/kubernetes/kubenetes-ca.pem \
   --cluster-signing-key-file=/var/lib/kubernetes/kubenetes-ca-key.pem \

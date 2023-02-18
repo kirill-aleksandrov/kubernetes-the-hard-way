@@ -20,7 +20,17 @@ certificate:
 
 cluster:
   name: the-hard-way
+  cidr: 10.200.0.0/16
   etcd:
     version: 3.4.23
   kubernetes:
     version: 1.26.0
+  crictl:
+    version: 1.26.0
+  containerd:
+    version: 1.6.15
+  cni_plugins:
+    version: 1.1.1
+  runc:
+    version: 1.1.4
+

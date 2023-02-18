@@ -1,0 +1,158 @@
+- name: Disable swap
+  command: swapoff -a
+
+- name: Disable swap automount
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+    replace: '# \1'
+    backup: yes
+
+- name: Download kubernetes binaries
+  ansible.builtin.get_url:
+    url: https://dl.k8s.io/v{{ cluster.kubernetes.version }}/bin/linux/amd64/{{ item }}
+    dest: /tmp
+    mode: 0755
+  with_items:
+    - kubelet
+    - kube-proxy
+    - kubectl
+
+- name: Download containerd binaries
+  ansible.builtin.get_url:
+    url: '{{ item }}'
+    dest: /tmp
+    mode: 0666
+  with_items:
+    - https://github.com/kubernetes-sigs/cri-tools/releases/download/v{{ cluster.crictl.version }}/crictl-v{{ cluster.crictl.version }}-linux-amd64.tar.gz
+    - https://github.com/containernetworking/plugins/releases/download/v{{ cluster.cni_plugins.version }}/cni-plugins-linux-amd64-v{{ cluster.cni_plugins.version }}.tgz
+    - https://github.com/opencontainers/runc/releases/download/v{{ cluster.runc.version }}/runc.amd64
+    - https://github.com/containerd/containerd/releases/download/v{{ cluster.containerd.version }}/containerd-{{ cluster.containerd.version }}-linux-amd64.tar.gz
+
+- name: Make directories
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: directory
+    mode: 0777
+  with_items:
+    - /tmp/crictl-v{{ cluster.crictl.version }}-linux-amd64
+    - /tmp/cni-plugins-linux-amd64-v{{ cluster.cni_plugins.version }}
+    - /tmp/containerd-{{ cluster.containerd.version }}-linux-amd64
+    - /opt/cni/bin
+
+- name: Unarchave containerd binaries
+  ansible.builtin.unarchive:
+    src: '/tmp/{{ item }}'
+    dest: '/tmp/{{ item | regex_replace("(\.tar\.gz|\.tgz)", "") }}'
+    remote_src: yes
+  with_items:
+    - crictl-v{{ cluster.crictl.version }}-linux-amd64.tar.gz
+    - cni-plugins-linux-amd64-v{{ cluster.cni_plugins.version }}.tgz
+    - containerd-{{ cluster.containerd.version }}-linux-amd64.tar.gz
+
+- name: Install binaries
+  ansible.builtin.copy:
+    src: /tmp/{{ item.src }}
+    dest: '{{ item.dest }}'
+    remote_src: yes
+    mode: 0755
+  with_items:
+    - src: crictl-v{{ cluster.crictl.version }}-linux-amd64/crictl
+      dest: /usr/local/bin/clictl
+    - src: cni-plugins-linux-amd64-v{{ cluster.cni_plugins.version }}/
+      dest: /opt/cni/bin
+    - src: containerd-{{ cluster.containerd.version }}-linux-amd64/bin/
+      dest: /bin
+    - src: runc.amd64
+      dest: /usr/local/bin/runc
+    - src: kubelet
+      dest: /usr/local/bin/kubelet
+    - src: kube-proxy
+      dest: /usr/local/bin/kube-proxy
+    - src: kubectl
+      dest: /usr/local/bin/kubectl
+
+- name: Make containerd directory
+  ansible.builtin.file:
+    path: /etc/containerd
+    state: directory
+    mode: 0755
+
+- name: Copy containerd configs and create its service
+  ansible.builtin.copy:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+    - src: config.toml
+      dest: /etc/containerd/config.toml
+    - src: containerd.service
+      dest: /etc/systemd/system/containerd.service
+
+- name: Make kubelet directories
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: directory
+    mode: 0755
+  with_items:
+    - /var/lib/kubelet
+    - /var/lib/kubernetes
+
+- name: Distribute kubelet certificates and kubeconfig
+  ansible.builtin.copy:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    mode: 0600
+  with_items:
+    - src: '{{ deployer.certificate.directory }}/worker/kubelet/{{ ansible_hostname }}.pem'
+      dest: /var/lib/kubelet/{{ ansible_hostname }}.pem
+    - src: '{{ deployer.certificate.directory }}/worker/kubelet/{{ ansible_hostname }}-key.pem'
+      dest: /var/lib/kubelet/{{ ansible_hostname }}-key.pem
+    - src: '{{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca.pem'
+      dest: /var/lib/kubernetes/
+    - src: '{{ deployer.auth_config.directory }}/kubelet/{{ ansible_hostname }}.kubeconfig'
+      dest: /var/lib/kubelet/kubeconfig
+
+- name: Render kubelet config
+  ansible.builtin.template:
+    src: kubelet-config.yaml.j2
+    dest: /var/lib/kubelet/kubelet-config.yaml
+    mode: 0644
+
+- name: Create kubelet service
+  ansible.builtin.copy:
+    src: kubelet.service
+    dest: /etc/systemd/system/kubelet.service
+    mode: 0644
+
+- name: Make kube-proxy directory
+  ansible.builtin.file:
+    path: /var/lib/kube-proxy
+    state: directory
+    mode: 0755
+
+- name: Distribute kube-proxy kubeconfig
+  ansible.builtin.copy:
+    src: '{{ deployer.auth_config.directory }}/kube-proxy/kube-proxy.kubeconfig'
+    dest: /var/lib/kube-proxy/kubeconfig
+    mode: 0600
+
+- name: Render kube-proxy config
+  ansible.builtin.template:
+    src: kube-proxy-config.yaml.j2
+    dest: /var/lib/kube-proxy/kube-proxy-config.yaml
+    mode: 0644
+
+- name: Create kube-proxy service
+  ansible.builtin.copy:
+    src: kube-proxy.service
+    dest: /etc/systemd/system/kube-proxy.service
+    mode: 0644
+
+- name: Start services
+  ansible.builtin.service:
+    name: '{{ item }}'
+    daemon_reload: yes
+    state: restarted
+  with_items:
+    - kubelet
+    - kube-proxy

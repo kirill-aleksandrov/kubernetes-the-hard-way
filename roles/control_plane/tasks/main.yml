@@ -10,7 +10,7 @@
   ansible.builtin.get_url:
     url: https://dl.k8s.io/v{{ cluster.kubernetes.version }}/bin/linux/amd64/{{ item }}
     dest: /tmp
-    mode: 0444
+    mode: 0755
   with_items:
     - kube-apiserver
     - kube-controller-manager
@@ -22,7 +22,7 @@
     src: /tmp/{{ item }}
     dest: /usr/local/bin/{{ item }}
     remote_src: yes
-    mode: 0744
+    mode: 0755
   with_items:
     - kube-apiserver
     - kube-controller-manager
@@ -63,9 +63,6 @@
     - src: '{{ deployer.encryption_config.directory }}/encryption-config.yaml'
       dest: /var/lib/kubernetes/encryption-config.yaml
 
-    - src: '{{ deployer.encryption_config.directory }}/encryption-config.yaml'
-      dest: /var/lib/kubernetes/encryption-config.yaml
-
     - src: '{{ deployer.auth_config.directory }}/kube-controller-manager/kube-controller-manager.kubeconfig'
       dest: /var/lib/kubernetes/kube-controller-manager.kubeconfig
     - src: '{{ deployer.auth_config.directory }}/kube-scheduler/kube-scheduler.kubeconfig'
@@ -73,6 +70,9 @@
 
     - src: kube-scheduler.yaml
       dest: /var/lib/kubernetes/kube-scheduler.yaml
+
+    - src: '{{ deployer.auth_config.directory }}/admin/admin.kubeconfig'
+      dest: /var/lib/kubernetes/admin.kubeconfig
 
 - name: Render services
   ansible.builtin.template:
@@ -96,3 +96,5 @@
     - kube-apiserver
     - kube-controller-manager
     - kube-scheduler
+
+# TODO: health check

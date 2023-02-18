@@ -40,7 +40,7 @@
     -ca-key={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca-key.pem \
     -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
     -profile=server \
-    -hostname=localhost,127.0.0.1,10.32.0.1,{{ hostvars[item]['ansible_host'] }},{{ kubernetes_hostnames }} \
+    -hostname=localhost,127.0.0.1,10.32.0.1,{{ hostvars[item]['ansible_host'] }},{{ hostvars[groups['lb_api'][0]]['ansible_host'] }},{{ kubernetes_hostnames }} \
     {{ deployer.certificate.directory }}/configs/controller/kube-apiserver-csr.json \
     | cfssljson -bare {{ item }}-kube-apiserver
   with_items: "{{ groups['controller'] }}"
@@ -100,12 +100,6 @@
     -config={{ deployer.certificate.directory }}/configs/cfssl-config.json \
     -profile=client \
     {{ deployer.certificate.directory }}/configs/controller/service-account-csr.json
-  register: hello
-
-- name: debug
-  debug:
-    msg: '{{ hello }}'
-
 
 - name: Generate service account certificate
   args:

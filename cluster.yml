@@ -3,26 +3,28 @@
   roles:
     - prepare
 
-- name: Generate CA
-  hosts: localhost
-  roles:
-    - certificates_ca
-
 - name: Generate certificates
   hosts: localhost
   roles:
-#    - certificates
+    - certificates_ca
     - certificates_etcd
     - certificates_control_plane
+    - certificates_worker
+  tags:
+    - certificates
 
 - name: Generate authentication configs
   hosts: localhost
   roles:
     - auth_configs
+  tags:
+    - certificates
 
 - name: Generate encryption config
   hosts: localhost
   roles:
+    - encryption_config
+  tags:
     - encryption_config
 
 - name: Set up etcd
@@ -30,15 +32,29 @@
   become: yes
   roles:
     - etcd
+  tags:
+    - etcd
 
 - name: Set up control plane
   hosts: controller
   become: yes
   roles:
     - control_plane
+  tags:
+    - control_plane
+
+- name: Set up worker_nodes
+  hosts: worker
+  become: yes
+  roles:
+    - worker_nodes
+  tags:
+    - worker_nodes
 
 - name: Set up Kubernetes API load balancer
   hosts: lb-api
   become: yes
   roles:
+    - api_load_balancer
+  tags:
     - api_load_balancer

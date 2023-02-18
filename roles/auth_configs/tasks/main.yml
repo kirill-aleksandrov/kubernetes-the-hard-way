@@ -3,124 +3,124 @@
     path: '{{ item.path }}'
     state: directory
   with_items:
-    - path: '{{ deployer.auth_config.directory }}/worker'
+    - path: '{{ deployer.auth_config.directory }}/kubelet'
     - path: '{{ deployer.auth_config.directory }}/kube-proxy'
     - path: '{{ deployer.auth_config.directory }}/kube-controller-manager'
     - path: '{{ deployer.auth_config.directory }}/kube-scheduler'
     - path: '{{ deployer.auth_config.directory }}/admin'
 
-#- name: Generate kubelet config
-#  ansible.builtin.shell:
-#    cmd: |
-#      kubectl config set-cluster {{ cluster.name }} \
-#        --certificate-authority={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca.pem \
-#        --embed-certs=true \
-#        --server=https://{{ hostvars[groups['lb_api'][0]]['ansible_host'] }}:6443 \
-#        --kubeconfig={{ item }}.kubeconfig
-#
-#      kubectl config set-credentials system:node:{{ item }} \
-#        --client-certificate={{ deployer.certificate.directory }}/worker/{{ item }}.pem \
-#        --client-key={{ deployer.certificate.directory }}/worker/{{ item }}-key.pem \
-#        --embed-certs=true \
-#        --kubeconfig={{ item }}.kubeconfig
-#
-#      kubectl config set-context default \
-#        --cluster={{ cluster.name }} \
-#        --user=system:node:{{ item }} \
-#        --kubeconfig={{ item }}.kubeconfig
-#
-#      kubectl config use-context default --kubeconfig={{ item }}.kubeconfig
-#    chdir: "{{ deployer.auth_config.directory }}/worker"
-#  with_items: '{{ groups["worker"] }}'
+- name: Generate kubelet config
+  ansible.builtin.shell:
+    chdir: "{{ deployer.auth_config.directory }}/kubelet"
+    cmd: |
+      kubectl config set-cluster {{ cluster.name }} \
+        --certificate-authority={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca.pem \
+        --embed-certs=true \
+        --server=https://{{ hostvars[groups['lb_api'][0]]['ansible_host'] }}:6443 \
+        --kubeconfig={{ item }}.kubeconfig
 
-#- name: Generate kube-proxy config
-#  ansible.builtin.shell:
-#    cmd: |
-#      kubectl config set-cluster {{ cluster.name }} \
-#        --certificate-authority={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca.pem \
-#        --embed-certs=true \
-#        --server=https://{{ hostvars[groups['lb_api'][0]]['ansible_host'] }}:6443 \
-#        --kubeconfig=kube-proxy.kubeconfig
-#
-#      kubectl config set-credentials system:kube-proxy \
-#        --client-certificate={{ deployer.certificate.directory }}/kube-proxy/kube-proxy.pem \
-#        --client-key={{ deployer.certificate.directory }}/kube-proxy/kube-proxy-key.pem \
-#        --embed-certs=true \
-#        --kubeconfig=kube-proxy.kubeconfig
-#
-#      kubectl config set-context default \
-#        --cluster={{ cluster.name }} \
-#        --user=system:kube-proxy \
-#        --kubeconfig=kube-proxy.kubeconfig
-#
-#      kubectl config use-context default --kubeconfig=kube-proxy.kubeconfig
-#    chdir: "{{ deployer.auth_config.directory }}/kube-proxy"
+      kubectl config set-credentials system:node:{{ item }} \
+        --client-certificate={{ deployer.certificate.directory }}/worker/kubelet/{{ item }}.pem \
+        --client-key={{ deployer.certificate.directory }}/worker/kubelet/{{ item }}-key.pem \
+        --embed-certs=true \
+        --kubeconfig={{ item }}.kubeconfig
+
+      kubectl config set-context default \
+        --cluster={{ cluster.name }} \
+        --user=system:node:{{ item }} \
+        --kubeconfig={{ item }}.kubeconfig
+
+      kubectl config use-context default --kubeconfig={{ item }}.kubeconfig
+  with_items: '{{ groups["worker"] }}'
+
+- name: Generate kube-proxy config
+  ansible.builtin.shell:
+    chdir: "{{ deployer.auth_config.directory }}/kube-proxy"
+    cmd: |
+      kubectl config set-cluster {{ cluster.name }} \
+        --certificate-authority={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca.pem \
+        --embed-certs=true \
+        --server=https://{{ hostvars[groups['lb_api'][0]]['ansible_host'] }}:6443 \
+        --kubeconfig=kube-proxy.kubeconfig
+
+      kubectl config set-credentials system:kube-proxy \
+        --client-certificate={{ deployer.certificate.directory }}/worker/kube-proxy/kube-proxy.pem \
+        --client-key={{ deployer.certificate.directory }}/worker/kube-proxy/kube-proxy-key.pem \
+        --embed-certs=true \
+        --kubeconfig=kube-proxy.kubeconfig
+
+      kubectl config set-context default \
+        --cluster={{ cluster.name }} \
+        --user=system:kube-proxy \
+        --kubeconfig=kube-proxy.kubeconfig
+
+      kubectl config use-context default --kubeconfig=kube-proxy.kubeconfig
 
 - name: Generate controller manager config
   ansible.builtin.shell:
+    chdir: "{{ deployer.auth_config.directory }}/kube-controller-manager"
     cmd: |
       kubectl config set-cluster {{ cluster.name }} \
         --certificate-authority={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca.pem \
         --embed-certs=true \
         --server=https://127.0.0.1:6443 \
         --kubeconfig=kube-controller-manager.kubeconfig
-    
+
       kubectl config set-credentials system:kube-controller-manager \
         --client-certificate={{ deployer.certificate.directory }}/controller/kube-controller-manager/kube-controller-manager.pem \
         --client-key={{ deployer.certificate.directory }}/controller/kube-controller-manager/kube-controller-manager-key.pem \
         --embed-certs=true \
         --kubeconfig=kube-controller-manager.kubeconfig
-    
+
       kubectl config set-context default \
         --cluster={{ cluster.name }} \
         --user=system:kube-controller-manager \
         --kubeconfig=kube-controller-manager.kubeconfig
-    
+
       kubectl config use-context default --kubeconfig=kube-controller-manager.kubeconfig
-    chdir: "{{ deployer.auth_config.directory }}/kube-controller-manager"
 
 - name: Generate scheduler config
   ansible.builtin.shell:
+    chdir: "{{ deployer.auth_config.directory }}/kube-scheduler"
     cmd: |
       kubectl config set-cluster {{ cluster.name }} \
         --certificate-authority={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca.pem \
         --embed-certs=true \
         --server=https://127.0.0.1:6443 \
         --kubeconfig=kube-scheduler.kubeconfig
-    
+
       kubectl config set-credentials system:kube-scheduler \
         --client-certificate={{ deployer.certificate.directory }}/controller/kube-scheduler/kube-scheduler.pem \
         --client-key={{ deployer.certificate.directory }}/controller/kube-scheduler/kube-scheduler-key.pem \
         --embed-certs=true \
         --kubeconfig=kube-scheduler.kubeconfig
-    
+
       kubectl config set-context default \
         --cluster={{ cluster.name }} \
         --user=system:kube-scheduler \
         --kubeconfig=kube-scheduler.kubeconfig
-    
-      kubectl config use-context default --kubeconfig=kube-scheduler.kubeconfig
-    chdir: "{{ deployer.auth_config.directory }}/kube-scheduler"
 
-#- name: Generate admin config
-#  ansible.builtin.shell:
-#    cmd: |
-#      kubectl config set-cluster {{ cluster.name }} \
-#        --certificate-authority={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca.pem \
-#        --embed-certs=true \
-#        --server=https://127.0.0.1:6443 \
-#        --kubeconfig=admin.kubeconfig
-#
-#      kubectl config set-credentials admin \
-#        --client-certificate={{ deployer.certificate.directory }}/admin/admin.pem \
-#        --client-key={{ deployer.certificate.directory }}/admin/admin-key.pem \
-#        --embed-certs=true \
-#        --kubeconfig=admin.kubeconfig
-#
-#      kubectl config set-context default \
-#        --cluster={{ cluster.name }} \
-#        --user=admin \
-#        --kubeconfig=admin.kubeconfig
-#
-#      kubectl config use-context default --kubeconfig=admin.kubeconfig
-#    chdir: "{{ deployer.auth_config.directory }}/admin"
+      kubectl config use-context default --kubeconfig=kube-scheduler.kubeconfig
+
+- name: Generate admin config
+  ansible.builtin.shell:
+    cmd: |
+      kubectl config set-cluster {{ cluster.name }} \
+        --certificate-authority={{ deployer.certificate.directory }}/ca/intermediates/kubernetes/kubernetes-ca.pem \
+        --embed-certs=true \
+        --server=https://127.0.0.1:6443 \
+        --kubeconfig=admin.kubeconfig
+
+      kubectl config set-credentials admin \
+        --client-certificate={{ deployer.certificate.directory }}/controller/kubernetes-admin/kubernetes-admin.pem \
+        --client-key={{ deployer.certificate.directory }}/controller/kubernetes-admin/kubernetes-admin-key.pem \
+        --embed-certs=true \
+        --kubeconfig=admin.kubeconfig
+
+      kubectl config set-context default \
+        --cluster={{ cluster.name }} \
+        --user=admin \
+        --kubeconfig=admin.kubeconfig
+
+      kubectl config use-context default --kubeconfig=admin.kubeconfig
+    chdir: "{{ deployer.auth_config.directory }}/admin"
