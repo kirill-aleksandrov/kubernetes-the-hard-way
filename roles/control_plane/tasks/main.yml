@@ -5,6 +5,7 @@
   with_items:
     - /etc/kubernetes/config
     - /var/lib/kubernetes
+    - /home/{{ ansible_user }}/.kube
 
 - name: Download binaries
   ansible.builtin.get_url:
@@ -73,6 +74,13 @@
 
     - src: '{{ deployer.auth_config.directory }}/admin/admin.kubeconfig'
       dest: /var/lib/kubernetes/admin.kubeconfig
+    - src: '{{ deployer.auth_config.directory }}/admin/admin.kubeconfig'
+      dest: /home/{{ ansible_user }}/.kube/config
+
+- name: Change ~/.kube/config owner
+  ansible.builtin.file:
+    path: /home/{{ ansible_user }}/.kube/config
+    owner: '{{ ansible_user }}'
 
 - name: Render services
   ansible.builtin.template:

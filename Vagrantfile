@@ -40,13 +40,4 @@ Vagrant.configure("2") do |config|
       end
     end
   end
-
-  config.vm.define "deployer" do |c|
-    c.vm.hostname = "deployer"
-    c.vm.network "public_network", ip: "172.20.255.1", :netmask => '255.240.0.0', bridge: "eno1"
-    c.vm.provider "virtualbox" do |vb|
-      vb.cpus = 2
-      vb.memory = "1024"
-    end
-  end
 end
